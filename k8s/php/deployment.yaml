@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crud-php
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crud-php
+  template:
+    metadata:
+      labels:
+        app: crud-php
+    spec:
+      containers:
+        - name: crud-php
+          image: crud-pessoas-php:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9000
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_DATABASE
+              value: crud
+            - name: DB_USERNAME
+              value: user
+            - name: DB_PASSWORD
+              value: secret
+

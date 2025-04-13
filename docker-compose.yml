@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: crud-php
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    networks:
+      - crud-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: crud-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - crud-net
+
+  redis:
+    image: redis:alpine
+    container_name: crud-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - crud-net
+
+  mysql:
+    image: mysql:8.0
+    container_name: crud-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: crud
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - crud-net
+
+networks:
+  crud-net:
+    
+volumes:
+  mysql_data:      
