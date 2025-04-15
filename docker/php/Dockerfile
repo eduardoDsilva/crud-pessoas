@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
         --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_mysql zip mbstring exif pcntl gd bcmath
 
+# Instala a extensão Redis
+RUN pecl install redis && docker-php-ext-enable redis
+
 # Instala o Composer diretamente da imagem oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
