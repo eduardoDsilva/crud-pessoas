@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePersonRequest;
 use App\Http\Requests\UpdatePersonRequest;
+use App\Jobs\SendPersonCreatedEmail;
 use App\Models\Address;
 use App\Models\Person;
+use Illuminate\Support\Facades\Log;
 
 class PersonController extends Controller
 {
@@ -24,6 +26,8 @@ class PersonController extends Controller
         $addressData['person_id'] = $person->id;
 
         $address = Address::create($addressData);
+
+        dispatch(new SendPersonCreatedEmail($person));
 
         return response()->json([
             'person' => $person,
