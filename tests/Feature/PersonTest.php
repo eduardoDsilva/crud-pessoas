@@ -52,8 +52,62 @@ class PersonTest extends TestCase
         ]);
     }
 
-
     public function test_create_person_with_duplicate_cpf()
+    {
+        $user = User::factory()->create();
+        Passport::actingAs($user);
+
+        $this->postJson('/api/people', [
+            'full_name' => 'John Doe',
+            'cpf' => '11332672236',
+            'rg' => '123456789',
+            'birth_date' => '1990-01-01',
+            'email' => 'johndoe@example.com',
+            'phone' => '1234567890',
+            'gender' => 'male',
+            'marital_status' => 'single',
+            'nationality' => 'Brazilian',
+            'occupation' => 'Engineer',
+            'address' => [
+                'street' => '123 Main St',
+                'number' => '45',
+                'complement' => 'Apt 101',
+                'neighborhood' => 'Downtown',
+                'city' => 'CityName',
+                'state' => 'StateName',
+                'zip_code' => '12345-678',
+                'country' => 'Brazil',
+            ]
+        ]);
+
+        $response = $this->postJson('/api/people', [
+            'full_name' => 'John Doe',
+            'cpf' => '11332672236',
+            'rg' => '123456789',
+            'birth_date' => '1990-01-01',
+            'email' => 'johndoe@example.com.br',
+            'phone' => '1234567890',
+            'gender' => 'male',
+            'marital_status' => 'single',
+            'nationality' => 'Brazilian',
+            'occupation' => 'Engineer',
+            'address' => [
+                'street' => '123 Main St',
+                'number' => '45',
+                'complement' => 'Apt 101',
+                'neighborhood' => 'Downtown',
+                'city' => 'CityName',
+                'state' => 'StateName',
+                'zip_code' => '12345-678',
+                'country' => 'Brazil',
+            ]
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['cpf']);
+    }
+
+    public function test_create_person_with_duplicate_email()
     {
         $user = User::factory()->create();
         Passport::actingAs($user);

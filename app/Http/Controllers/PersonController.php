@@ -1,21 +1,37 @@
 <?php
 
-
 namespace App\Http\Controllers;
 
+use App\Models\Person;
+use App\Models\Address;
 use App\Http\Requests\StorePersonRequest;
 use App\Http\Requests\UpdatePersonRequest;
-use App\Jobs\SendPersonCreatedEmail;
-use App\Models\Address;
-use App\Models\Person;
-use Illuminate\Support\Facades\Log;
+use App\Traits\HasCache;
 
 class PersonController extends Controller
 {
+    use HasCache;
 
     public function index()
     {
-        return response()->json(Person::all());
+        $cacheKey = "todas_as_pessoas";
+
+        $people = $this->getFromCache($cacheKey, function () {
+            return Person::with('address')->get();
+        });
+
+        return response()->json($people);
+    }
+
+    public function show($id)
+    {
+        $cacheKey = "pessoa_com_endereco_{$id}";
+
+        $person = $this->getFromCache($cacheKey, function () use ($id) {
+            return Person::with('address')->findOrFail($id);
+        });
+
+        return response()->json($person);
     }
 
     public function store(StorePersonRequest $request)
@@ -23,22 +39,12 @@ class PersonController extends Controller
         $person = Person::create($request->validated());
 
         $addressData = $request->input('address');
-        $addressData['person_id'] = $person->id;
+        if ($addressData) {
+            $addressData['person_id'] = $person->id;
+            Address::create($addressData);
+        }
 
-        $address = Address::create($addressData);
-
-        dispatch(new SendPersonCreatedEmail($person));
-
-        return response()->json([
-            'person' => $person,
-            'address' => $address
-        ], 201);
-    }
-
-    public function show($id)
-    {
-        $person = Person::with('address')->findOrFail($id);
-        return response()->json($person);
+        return response()->json($person->load('address'), 201);
     }
 
     public function update(UpdatePersonRequest $request, $id)
@@ -58,13 +64,19 @@ class PersonController extends Controller
             }
         }
 
+        $this->forgetCache("pessoa_com_endereco_{$id}");
+
         return response()->json($person->load('address'));
     }
 
     public function destroy($id)
     {
         $person = Person::findOrFail($id);
+
         $person->delete();
+
+        $this->forgetCache("pessoa_com_endereco_{$id}");
+        $this->forgetCache("todas_as_pessoas");
 
         return response()->json(['message' => 'Person deleted successfully']);
     }
